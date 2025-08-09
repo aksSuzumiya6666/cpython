@@ -1,24 +1,30 @@
-name: Windows Build and Upload to Release (Manual Trigger)
+name: Windows Build and Upload (Debug)
 
 on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag name (e.g. v3.12.0)'
+        description: 'Release tag (e.g. v3.12.0)'
         required: true
         type: string
       prerelease:
         description: 'Mark as prerelease'
         required: false
-        default: 'false'
+        default: false
+        type: boolean
+      debug:
+        description: 'Enable debug logs'
+        required: false
+        default: true
         type: boolean
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   build-windows:
-    name: Build Windows Installers (${{ matrix.arch }})
+    name: Build ${{ matrix.arch }}
     runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-arm' || 'windows-latest' }}
     strategy:
       fail-fast: false
@@ -26,33 +32,97 @@ jobs:
         arch: [x64, x86, arm64]
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Show workflow info (debug)
+        if: ${{ github.event.inputs.debug == 'true' }}
+        run: |
+          echo "Triggered by: ${{ github.triggering_actor }}"
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Matrix arch: ${{ matrix.arch }}"
+          echo "Workspace: ${{ github.workspace }}"
+        shell: pwsh
+
+      - name: Checkout source
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 5
+          submodules: 'recursive'  # 确保获取子模块
+
+      - name: Verify checkout
+        run: |
+          dir
+          dir PCbuild
+          dir Tools\msi
+        shell: cmd
 
       - name: Get external dependencies
         run: |
+          echo "Starting dependency download..."
           cd Tools\msi
-          .\get_externals.bat
+          .\get_externals.bat || (echo "Failed to get externals" && exit 1)
+          dir externals  # 验证依赖是否下载成功
         shell: cmd
+        continue-on-error: false  # 依赖失败则终止
 
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: ${{ matrix.arch }}
+
+      - name: Verify MSBuild
+        run: |
+          msbuild /version
+        shell: cmd
+
+      - name: Create output directory
+        run: |
+          mkdir ${{ github.workspace }}\output
+          dir ${{ github.workspace }}
+        shell: cmd
 
       - name: Build installer
         run: |
+          echo "Starting build for ${{ matrix.arch }}..."
           .\Tools\msi\buildrelease.bat -${{ matrix.arch }} -o ${{ github.workspace }}\output
+          echo "Build exit code: %ERRORLEVEL%"
+          dir ${{ github.workspace }}\output
         shell: cmd
-        env:
-          PYTHON: python
-          SPHINXBUILD: sphinx-build
+        continue-on-error: false  # 构建失败则终止
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer-${{ matrix.arch }}
           path: ${{ github.workspace }}\output\**\*
+          if-no-files-found: error  # 没有文件则报错
 
   upload-to-release:
     name: Upload to Release
     needs: build-windows
+    runs-on: windows-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}\artifacts
+
+      - name: Verify artifacts
+        run: |
+          dir ${{ github.workspace }}\artifacts /s
+        shell: cmd
+
+      - name: Create release (if not exists)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.release_tag }}
+          name: Release ${{ github.event.inputs.release_tag }}
+          prerelease: ${{ github.event.inputs.prerelease }}
+          draft: false
+
+      - name: Upload to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ github.workspace }}\artifacts\**\*
+          tag: ${{ github.event.inputs.release_tag }}
+          file_glob: true
+          overwrite: true  # 覆盖已存在的文件
