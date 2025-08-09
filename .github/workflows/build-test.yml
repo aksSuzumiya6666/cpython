@@ -1,13 +1,20 @@
-name: Windows Build and Upload to Release
+name: Windows Build and Upload to Release (Manual Trigger)
 
 on:
-  push:
-    tags:
-      - 'v*'  # 触发标签如 v3.12.0
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag name (e.g. v3.12.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as prerelease'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
-  contents: write  # 需要发布权限上传release资产
+  contents: write
 
 jobs:
   build-windows:
@@ -60,7 +67,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ github.workspace }}\artifacts\**\*  # 匹配所有架构的安装包
-          tag: ${{ github.ref }}  # 使用触发工作流的标签
-          file_glob: true  # 启用通配符匹配
-          prerelease: false  # 正式发布设为false，预发布设为true
+          file: ${{ github.workspace }}\artifacts\**\*
+          tag: ${{ github.event.inputs.release_tag }}
+          file_glob: true
+          prerelease: ${{ github.event.inputs.prerelease }}
