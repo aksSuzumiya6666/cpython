@@ -19,7 +19,7 @@ permissions:
 jobs:
   build-windows:
     name: Build Windows Installers (${{ matrix.arch }})
-    runs-on: ${{ matrix.arch == 'arm64' ? 'windows-11-arm' : 'windows-latest' }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-arm' || 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -56,18 +56,3 @@ jobs:
   upload-to-release:
     name: Upload to Release
     needs: build-windows
-    runs-on: windows-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ github.workspace }}\artifacts
-
-      - name: Upload to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ github.workspace }}\artifacts\**\*
-          tag: ${{ github.event.inputs.release_tag }}
-          file_glob: true
-          prerelease: ${{ github.event.inputs.prerelease }}
