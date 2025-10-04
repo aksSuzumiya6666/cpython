@@ -94,35 +94,3 @@ jobs:
           name: windows-installer-${{ matrix.arch }}
           path: ${{ github.workspace }}\output\**\*
           if-no-files-found: error  # 没有文件则报错
-
-  upload-to-release:
-    name: Upload to Release
-    needs: build-windows
-    runs-on: windows-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ github.workspace }}\artifacts
-
-      - name: Verify artifacts
-        run: |
-          dir ${{ github.workspace }}\artifacts /s
-        shell: cmd
-
-      - name: Create release (if not exists)
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.release_tag }}
-          name: Release ${{ github.event.inputs.release_tag }}
-          prerelease: ${{ github.event.inputs.prerelease }}
-          draft: false
-
-      - name: Upload to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ github.workspace }}\artifacts\**\*
-          tag: ${{ github.event.inputs.release_tag }}
-          file_glob: true
-          overwrite: true  # 覆盖已存在的文件
