@@ -326,7 +326,7 @@ For example::
         .. versionadded:: 3.10
 
     The usual dictionary methods are available for :class:`Counter` objects
-    except for two which work differently for counters.
+    except for these two which work differently for counters:
 
     .. method:: fromkeys(iterable)
 
@@ -483,6 +483,8 @@ or subtracting from an empty counter.
     length deques provide functionality similar to the ``tail`` filter in
     Unix. They are also useful for tracking transactions and other pools of data
     where only the most recent activity is of interest.
+
+    Deques are :ref:`generic <generics>` over the type of their contents.
 
 
     Deque objects support the following methods:
@@ -738,6 +740,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
     attribute; it defaults to ``None``. All remaining arguments are treated the same
     as if they were passed to the :class:`dict` constructor, including keyword
     arguments.
+
+    :class:`!defaultdict`\s are :ref:`generic <generics>` over two types,
+    signifying (respectively) the types of the dictionary's keys and values.
 
 
     :class:`defaultdict` objects support the following method in addition to the

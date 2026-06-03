@@ -931,7 +931,6 @@ Functions
 
 
 .. function:: prefixmatch(pattern, string, flags=0)
-.. function:: match(pattern, string, flags=0)
 
    If zero or more characters at the beginning of *string* match the regular
    expression *pattern*, return a corresponding :class:`~re.Match`.  Return
@@ -954,7 +953,11 @@ Functions
    :func:`~re.match`.  Use that name when you need to retain compatibility with
    older Python versions.
 
-   .. deprecated:: 3.15
+   .. versionadded:: 3.15
+
+.. function:: match(pattern, string, flags=0)
+
+   .. soft-deprecated:: 3.15
       :func:`~re.match` has been :term:`soft deprecated` in favor of
       the alternate :func:`~re.prefixmatch` name of this API which is
       more explicitly descriptive. Use it to better
@@ -1254,6 +1257,9 @@ Regular expression objects
 
    Compiled regular expression object returned by :func:`re.compile`.
 
+   Patterns are :ref:`generic <generics>` over the type of string they handle
+   (:class:`str` or :class:`bytes`).
+
    .. versionchanged:: 3.9
       :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.
       See :ref:`types-genericalias`.
@@ -1285,7 +1291,6 @@ Regular expression objects
 
 
 .. method:: Pattern.prefixmatch(string[, pos[, endpos]])
-.. method:: Pattern.match(string[, pos[, endpos]])
 
    If zero or more characters at the *beginning* of *string* match this regular
    expression, return a corresponding :class:`~re.Match`. Return ``None`` if the
@@ -1310,7 +1315,11 @@ Regular expression objects
    :meth:`~Pattern.match`.  Use that name when you need to retain compatibility
    with older Python versions.
 
-   .. deprecated:: 3.15
+   .. versionadded:: 3.15
+
+.. method:: Pattern.match(string[, pos[, endpos]])
+
+   .. soft-deprecated:: 3.15
       :meth:`~Pattern.match` has been :term:`soft deprecated` in favor of
       the alternate :meth:`~Pattern.prefixmatch` name of this API which is
       more explicitly descriptive. Use it to
@@ -1412,6 +1421,9 @@ when there is no match, you can test whether there was a match with a simple
 .. class:: Match
 
    Match object returned by successful ``match``\ es and ``search``\ es.
+
+   Matches are :ref:`generic <generics>` over the type of string which was
+   matched (:class:`str` or :class:`bytes`).
 
    .. versionchanged:: 3.9
       :py:class:`re.Match` supports ``[]`` to indicate a Unicode (str) or bytes match.
@@ -1794,8 +1806,8 @@ while new code should prefer :func:`!prefixmatch`.
 .. versionadded:: 3.15
    :func:`!prefixmatch`
 
-.. deprecated:: 3.15
-   :func:`!match` is :term:`soft deprecated`
+.. soft-deprecated:: 3.15
+   :func:`!match`
 
 Making a phonebook
 ^^^^^^^^^^^^^^^^^^
@@ -1947,7 +1959,7 @@ successive matches::
 
     class Token(NamedTuple):
         type: str
-        value: str
+        value: int | float | str
         line: int
         column: int
 
